@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../../../apps/admin/src/app/movies/%5Bid%5D/edit/page.tsx"],"sourcesContent":["const EditMoviePage = () => {\n  return null;\n};\n\nexport default EditMoviePage;\n"],"names":[],"mappings":"qVAAsB,IACb"}

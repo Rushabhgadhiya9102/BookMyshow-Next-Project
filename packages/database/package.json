@@ -1,0 +1,19 @@
+{
+  "name": "@bookmyshow/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bookmyshow/shared-types": "*",
+    "mongoose": "^8.19.4"
+  },
+  "devDependencies": {
+    "@bookmyshow/config": "*",
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}

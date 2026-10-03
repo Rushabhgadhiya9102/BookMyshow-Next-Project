@@ -1,0 +1,16 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/activities/page": "/activities",
+  "/events/page": "/events",
+  "/favicon.ico/route": "/favicon.ico",
+  "/login/page": "/login",
+  "/movies/[id]/page": "/movies/[id]",
+  "/movies/page": "/movies",
+  "/page": "/",
+  "/plays/page": "/plays",
+  "/signup/page": "/signup",
+  "/sports/page": "/sports",
+  "/streams/page": "/streams",
+  "/success/page": "/success"
+}

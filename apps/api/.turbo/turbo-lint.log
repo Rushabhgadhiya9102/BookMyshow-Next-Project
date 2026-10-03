@@ -1,0 +1,15 @@
+
+> @bookmyshow/api@0.1.0 lint
+> eslint
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+
+D:\enterprise-level projects\rough project\BookMyshow-Next-Project\apps\api\src\app\page.tsx
+  1:10  warning  'NextResponse' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\enterprise-level projects\rough project\BookMyshow-Next-Project\apps\api\src\main.ts
+  1:15  warning  'ShowSummary' is defined but never used   @typescript-eslint/no-unused-vars
+  2:10  warning  'isValidEmail' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 3 problems (0 errors, 3 warnings)
+
