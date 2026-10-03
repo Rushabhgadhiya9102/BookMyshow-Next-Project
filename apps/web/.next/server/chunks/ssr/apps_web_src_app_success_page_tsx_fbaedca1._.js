@@ -1,3 +1,0 @@
-module.exports=[17919,a=>{"use strict";var b=a.i(87924),c=a.i(50944);a.s(["default",0,()=>{let a=(0,c.useSearchParams)(),d=a.get("movie"),e=a.get("user"),f=a.get("seats");return(0,b.jsxs)("div",{className:"p-10 text-center",children:[(0,b.jsx)("h1",{className:"text-3xl font-bold text-green-600",children:"Payment Successful! 🎉"}),(0,b.jsxs)("p",{className:"mt-4",children:["Movie ID: ",d]}),(0,b.jsxs)("p",{children:["User ID: ",e]}),(0,b.jsxs)("p",{children:["Seats: ",f]}),(0,b.jsx)("p",{className:"mt-6 text-gray-600",children:"Your ticket has been confirmed."})]})}])}];
-
-//# sourceMappingURL=apps_web_src_app_success_page_tsx_fbaedca1._.js.map

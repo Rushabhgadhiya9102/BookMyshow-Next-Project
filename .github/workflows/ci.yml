@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/bookmyshow_test?schema=public"
+  JWT_SECRET: "ci-test-jwt-secret-key-bookmyshow"
+  NEXT_PUBLIC_API_URL: "http://localhost:4000"
+  NEXT_PUBLIC_CLIENT_URL: "http://localhost:3000"
+  TURBO_TELEMETRY_DISABLED: "1"
+
+jobs:
+  validate:
+    name: Lint, Type Check & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 24 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Turborepo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Generate Prisma Client
+        run: npx prisma generate --schema=packages/database/prisma/schema.prisma
+
+      - name: Run Type Checking
+        run: npm run check-types
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Build All Applications & Packages
+        run: npm run build

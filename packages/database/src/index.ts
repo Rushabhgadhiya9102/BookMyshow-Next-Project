@@ -1,14 +1,32 @@
 import mongoose from "mongoose";
+import { PrismaClient } from "@prisma/client";
+
+export * from "@prisma/client";
+
+declare global {
+  var __prismaGlobalClient__: PrismaClient | undefined;
+  var __mongooseGlobalPromise__: Promise<typeof mongoose> | undefined;
+}
+
+export const getPrismaClient = (): PrismaClient => {
+  if (process.env.NODE_ENV === "production") {
+    return new PrismaClient();
+  }
+  if (!global.__prismaGlobalClient__) {
+    global.__prismaGlobalClient__ = new PrismaClient({
+      log: ["warn", "error"],
+    });
+  }
+  return global.__prismaGlobalClient__;
+};
+
+export const prisma = getPrismaClient();
 
 export * from "./models/user.model";
 export * from "./models/movie.model";
 export * from "./models/seat.model";
 export * from "./models/ticket.model";
 export * from "./models/comment.model";
-
-declare global {
-  var __mongooseGlobalPromise__: Promise<typeof mongoose> | undefined;
-}
 
 export const connectDatabase = async (mongoUrl: string): Promise<typeof mongoose> => {
   if (!mongoUrl) {

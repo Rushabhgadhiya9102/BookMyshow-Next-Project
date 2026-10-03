@@ -1,9 +1,0 @@
-{
-  "/_global-error/page": "/_global-error",
-  "/_not-found/page": "/_not-found",
-  "/favicon.ico/route": "/favicon.ico",
-  "/movies/[id]/edit/page": "/movies/[id]/edit",
-  "/movies/new/page": "/movies/new",
-  "/movies/page": "/movies",
-  "/page": "/"
-}

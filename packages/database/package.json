@@ -5,15 +5,19 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
+    "prisma:generate": "prisma generate",
+    "build": "prisma generate",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@bookmyshow/shared-types": "*",
+    "@prisma/client": "^6.4.1",
     "mongoose": "^8.19.4"
   },
   "devDependencies": {
     "@bookmyshow/config": "*",
     "@types/node": "^20",
+    "prisma": "^6.4.1",
     "typescript": "^5"
   }
 }
