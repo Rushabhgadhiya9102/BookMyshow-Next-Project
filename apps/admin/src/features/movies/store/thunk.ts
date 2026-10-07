@@ -35,22 +35,23 @@ export const imageUpload = async (file: File): Promise<string> => {
         formData.append("file", file)
 
         const res = await apiInstance.post<{ url: string }>('/api/v1/uploads', formData, {
-            headers: { "Content-Type": "multipart/form-data" }
+            headers: { "Content-Type": undefined }
         })
         return res.data.url
 
     } catch (error) {
-        console.log("error an occur in image upload");
-        if (axios.isAxiosError<{ error?: string }>(error)) {
-            throw new Error(error.response?.data?.error || "failed to upload image")
+        console.error("Error in image upload:", error);
+        if (axios.isAxiosError<{ error?: string; message?: string | string[] }>(error)) {
+            const raw = error.response?.data?.message || error.response?.data?.error || error.message;
+            const msg = Array.isArray(raw) ? raw.join(", ") : raw;
+            throw new Error(msg || "failed to upload image");
         }
 
         if (error instanceof Error) {
-            throw new Error(error.message)
+            throw new Error(error.message);
         }
 
-        throw new Error("failed to upload image")
-
+        throw new Error("failed to upload image");
     }
 }
 

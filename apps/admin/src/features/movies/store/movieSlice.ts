@@ -52,7 +52,7 @@ const movieSlice = createSlice({
 
         builder.addCase(getmovie.fulfilled, (state, action) => {
             state.loading = false
-            state.movies = action.payload
+            state.movies = Array.isArray(action.payload) ? action.payload : []
         })
 
         builder.addCase(getmovie.rejected, (state, action) => {
@@ -106,7 +106,7 @@ const movieSlice = createSlice({
 
         builder.addCase(deleteMovie.fulfilled, (state, action) => {
             state.loading = false
-            state.movies = state.movies.filter(movie => movie._id !== action.payload)
+            state.movies = (state.movies || []).filter((movie: Movie) => movie._id !== action.payload)
         })
 
         builder.addCase(deleteMovie.rejected, (state, action) => {
@@ -124,7 +124,7 @@ const movieSlice = createSlice({
 
         builder.addCase(updateMovie.fulfilled, (state, action) => {
             state.loading = false
-            state.movies = state.movies.map((movie) => {
+            state.movies = (state.movies || []).map((movie: Movie) => {
                 if (movie._id === action.payload._id) {
                     return action.payload
                 } else {

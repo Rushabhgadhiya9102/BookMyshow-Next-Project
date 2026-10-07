@@ -14,17 +14,26 @@ export class UpdateMovieDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  synopsis?: string;
+
+  @IsOptional()
   durationMinutes?: number;
 
   @IsOptional()
   duration?: number;
 
   @IsOptional()
+  runtime?: any;
+
+  @IsOptional()
   releaseDate?: string | Date;
 
   @IsOptional()
-  @IsString()
-  language?: string;
+  language?: string | string[];
+
+  @IsOptional()
+  genres?: string | string[];
 
   @IsOptional()
   @IsString()
@@ -36,11 +45,19 @@ export class UpdateMovieDto {
 
   @IsOptional()
   @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
   poster?: string;
 
   @IsOptional()
   @IsString()
   posterUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  banners?: string;
 
   @IsOptional()
   @IsString()
@@ -51,5 +68,11 @@ export class UpdateMovieDto {
   trailerUrl?: string;
 
   @IsOptional()
-  rating?: number;
+  rating?: any;
+
+  @IsOptional()
+  cast?: any[];
+
+  @IsOptional()
+  cinemas?: any[];
 }

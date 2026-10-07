@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from "@nestjs/common";
 import { PrismaService } from "@/prisma/prisma.service";
 
 @Injectable()
@@ -10,6 +15,7 @@ export class CommentsService {
     return {
       ...c,
       _id: c.id,
+      isVerifiedBooking: true,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
     };
@@ -27,6 +33,11 @@ export class CommentsService {
     };
   }
 
+  /**
+   * Section 90: Verified Movie Reviews
+   * Business rule: Only users with a completed/confirmed booking for the movie may submit a review.
+   * Duplicate reviews are rejected.
+   */
   async create(data: {
     movieId: string;
     userId: string;
@@ -34,18 +45,38 @@ export class CommentsService {
     comment: string;
     rating?: number;
   }) {
-    let user = await this.prisma.user.findUnique({ where: { id: data.userId } });
+    const user = await this.prisma.user.findUnique({ where: { id: data.userId } });
     if (!user) {
-      user = await this.prisma.user.findFirst();
-      if (!user) {
-        user = await this.prisma.user.create({
-          data: {
-            username: data.username || "Guest",
-            email: `guest-${Date.now()}@bookmyshow.local`,
-            passwordHash: "dummy-hash",
-          },
-        });
-      }
+      throw new NotFoundException("User not found");
+    }
+
+    // 1. Verify User has an eligible confirmed booking for this movie
+    const eligibleBooking = await this.prisma.booking.findFirst({
+      where: {
+        userId: user.id,
+        status: "CONFIRMED",
+        show: { movieId: data.movieId },
+      },
+    });
+
+    if (!eligibleBooking) {
+      throw new ForbiddenException(
+        "Only customers who have confirmed bookings for this movie can submit a verified review (Section 90)."
+      );
+    }
+
+    // 2. Prevent duplicate reviews by the same user for this movie
+    const existingReview = await this.prisma.review.findFirst({
+      where: {
+        movieId: data.movieId,
+        userId: user.id,
+      },
+    });
+
+    if (existingReview) {
+      throw new ConflictException(
+        "You have already submitted a review for this movie."
+      );
     }
 
     const review = await this.prisma.review.create({
@@ -59,7 +90,7 @@ export class CommentsService {
     });
 
     return {
-      message: "comment created successfully",
+      message: "Verified review created successfully",
       status: 201,
       comment: this.mapComment(review),
     };
@@ -79,7 +110,7 @@ export class CommentsService {
     return {
       message: "comment updated successfully",
       status: 200,
-      updatedComment: this.mapComment(updated),
+      comment: this.mapComment(updated),
     };
   }
 
@@ -90,9 +121,11 @@ export class CommentsService {
     }
 
     await this.prisma.review.delete({ where: { id } });
+
     return {
       message: "comment deleted successfully",
       status: 200,
+      _id: id,
     };
   }
 }

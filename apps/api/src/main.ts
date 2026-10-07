@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe, Logger } from "@nestjs/common";
+import { json, urlencoded } from "express";
 import cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 
@@ -10,6 +11,8 @@ async function bootstrap() {
     rawBody: true,
   });
 
+  app.use(json({ limit: "50mb" }));
+  app.use(urlencoded({ extended: true, limit: "50mb" }));
   app.use(cookieParser());
 
   app.enableCors({
@@ -21,7 +24,15 @@ async function bootstrap() {
     ].filter(Boolean),
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "stripe-signature"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "stripe-signature",
+      "Idempotency-Key",
+      "idempotency-key",
+      "X-Requested-With",
+      "Accept",
+    ],
   });
 
   app.setGlobalPrefix("api/v1");
@@ -33,6 +44,9 @@ async function bootstrap() {
       forbidNonWhitelisted: false,
     })
   );
+
+  // Section 97: Graceful Shutdown for SIGTERM/SIGINT
+  app.enableShutdownHooks();
 
   const port = process.env.PORT || 4000;
   await app.listen(port);

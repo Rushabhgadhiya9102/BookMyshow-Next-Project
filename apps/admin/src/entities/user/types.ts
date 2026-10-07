@@ -1,12 +1,10 @@
-import type { JwtPayload } from "jsonwebtoken";
-
 export type UserRole = "admin" | "user";
 
 export interface User {
   _id: string;
   username: string;
   email: string;
-  password: string;
+  password?: string;
   role: UserRole;
   createdAt?: string;
   updatedAt?: string;
@@ -25,11 +23,13 @@ export interface SignupRequest extends LoginCredentials {
   role: UserRole;
 }
 
-export interface AuthTokenPayload extends JwtPayload {
+export interface AuthTokenPayload {
   id: string;
   email: string;
   username: string;
   role: UserRole;
+  exp?: number;
+  iat?: number;
 }
 
 export interface LoginResponse {

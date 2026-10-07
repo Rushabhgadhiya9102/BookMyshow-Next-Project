@@ -10,9 +10,9 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@bookmyshow/database": "*",
     "@bookmyshow/shared-types": "*",
     "@bookmyshow/validation": "*",
-    "@bookmyshow/database": "*",
     "@dotenvx/dotenvx": "^1.51.1",
     "@reduxjs/toolkit": "^2.10.1",
     "@stripe/stripe-js": "^8.5.3",
@@ -31,6 +31,7 @@
     "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
     "recharts": "^3.5.1",
+    "socket.io-client": "^4.8.4",
     "stripe": "^20.0.0"
   },
   "devDependencies": {

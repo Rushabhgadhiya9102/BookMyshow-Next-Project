@@ -1,5 +1,5 @@
 'use client';
-import type { Movie } from '@/features/movies/types';
+import type { Movie, MovieCastMember } from '@/features/movies/types';
 import AdminHeader from '@/shared/components/layout/AdminHeader';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux';
 import { setSelectedMovie } from '@/features/movies/store/movieSlice';
@@ -59,10 +59,11 @@ const ViewsMovies = () => {
     },
     {
       name: 'createdBy',
-      selector: row =>
-        typeof row.createdBy === 'string'
-          ? row.createdBy
-          : row.createdBy.username || row.createdBy.name || row.createdBy._id || 'unknown',
+      selector: row => {
+        if (!row.createdBy) return 'unknown';
+        if (typeof row.createdBy === 'string') return row.createdBy;
+        return row.createdBy.username || row.createdBy.name || row.createdBy._id || 'unknown';
+      },
       sortable: true
     },
     {
@@ -70,7 +71,11 @@ const ViewsMovies = () => {
       cell: row => {
         return (
           <Image
-            src={row.poster || ''}
+            src={
+              row.poster ||
+              row.posterUrl ||
+              'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=60'
+            }
             alt={row.title || 'movie Poster'}
             width={50}
             height={50}
@@ -85,7 +90,13 @@ const ViewsMovies = () => {
       cell: row => {
         return (
           <Image
-            src={row.banners || ''}
+            src={
+              row.banners ||
+              row.backdropUrl ||
+              row.poster ||
+              row.posterUrl ||
+              'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=60'
+            }
             alt={row.title || 'movie Poster'}
             width={50}
             height={50}
@@ -97,7 +108,7 @@ const ViewsMovies = () => {
     },
     {
       name: 'genres',
-      selector: row => row.genres.join(','),
+      selector: row => (Array.isArray(row.genres) ? row.genres.join(', ') : (row.genres || 'N/A')),
       sortable: true
     },
     // {
@@ -137,7 +148,7 @@ const ViewsMovies = () => {
         <DataTable
           title="Movie List"
           columns={columns}
-          data={movies}
+          data={Array.isArray(movies) ? movies : []}
           pagination
           highlightOnHover
           striped
@@ -147,29 +158,33 @@ const ViewsMovies = () => {
 
       <h2 className='text-center my-5 text-2xl font-bold'>List</h2>
 
-      {movies.map(movie => (
-        <div key={movie._id} className="border p-5 mx-15 my-5">
-          <h1 className="font-bold">Title: {movie.title}</h1>
-            <p>Synopsis: {movie.synopsis}</p>
-            <p>Genres: {movie.genres.join(', ')}</p>
-            <p>Language: {movie.language.join(', ')}</p>
-            <p>Cinemas: {movie.cinemas.join(', ')}</p>
-            <p>Category: {movie.category}</p>
-            <p>Release Date: {movie.releaseDate ? new Date(movie.releaseDate).toDateString() : 'N/A'}</p>
-            <p>Runtime: {movie.runtime} minutes</p>
-            <p>Rating: {movie.rating}</p>
-            <div>
-                <h3 className="font-bold">Cast:</h3>
-                <ul>
-                    {movie.cast.map((member, index) => (
-                        <li key={index}>
-                            Name: {member.name}, Role: {member.role}
-                        </li>
-                    ))}
-                </ul>
-            </div>
+      {(Array.isArray(movies) ? movies : []).map(movie => (
+        <div key={movie._id} className="border p-5 mx-15 my-5 rounded-lg shadow-sm">
+          <h1 className="font-bold text-xl">Title: {movie.title}</h1>
+          <p>Synopsis: {movie.synopsis || movie.description || 'N/A'}</p>
+          <p>Genres: {Array.isArray(movie.genres) ? movie.genres.join(', ') : (movie.genres || 'N/A')}</p>
+          <p>Language: {Array.isArray(movie.language) ? movie.language.join(', ') : (movie.language || 'N/A')}</p>
+          <p>Cinemas: {Array.isArray(movie.cinemas) ? movie.cinemas.join(', ') : (movie.cinemas || 'N/A')}</p>
+          <p>Category: {movie.category || 'Movie'}</p>
+          <p>Release Date: {movie.releaseDate ? new Date(movie.releaseDate).toDateString() : 'N/A'}</p>
+          <p>Runtime: {movie.runtime ?? movie.durationMinutes ?? 'N/A'} minutes</p>
+          <p>Rating: {movie.rating ?? 'N/A'}</p>
+          <div>
+            <h3 className="font-bold">Cast:</h3>
+            <ul className="list-disc list-inside">
+              {Array.isArray(movie.cast) && movie.cast.length > 0 ? (
+                movie.cast.map((member: MovieCastMember, index: number) => (
+                  <li key={index}>
+                    Name: {member?.name || 'Unknown'}, Role: {member?.role || 'Cast'}
+                  </li>
+                ))
+              ) : (
+                <li>No cast listed</li>
+              )}
+            </ul>
+          </div>
         </div>
-        ))}
+      ))}
     </>
   );
 };

@@ -6,13 +6,16 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "@bookmyshow/database#build": {
-      "cache": false
+      "outputs": ["dist/**"]
     },
     "lint": {
       "dependsOn": ["^lint"]
     },
     "check-types": {
       "dependsOn": ["^check-types"]
+    },
+    "test": {
+      "cache": false
     },
     "dev": {
       "cache": false,

@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   Req,
+  Query,
 } from "@nestjs/common";
 import { Request } from "express";
 import { JwtService } from "@nestjs/jwt";
@@ -24,7 +25,12 @@ export class MoviesController {
 
   @Public()
   @Get()
-  async findAll(@Req() req: Request) {
+  async findAll(
+    @Req() req: Request,
+    @Query("city") city?: string,
+    @Query("status") status?: string,
+    @Query("language") language?: string
+  ) {
     let adminId: string | undefined;
 
     const authHeader = req.headers.authorization;
@@ -47,7 +53,7 @@ export class MoviesController {
       }
     }
 
-    const movieData = await this.moviesService.findAll(adminId);
+    const movieData = await this.moviesService.findAll(adminId, city, status, language);
     return {
       message: "movie fetch sucessfull",
       movieData,

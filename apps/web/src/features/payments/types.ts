@@ -3,6 +3,7 @@ export interface StripeSessionPayload {
   movieId: string;
   userId: string;
   selectedSeats: string[];
+  bookingId?: string;
 }
 
 export interface StripeSessionResponse {

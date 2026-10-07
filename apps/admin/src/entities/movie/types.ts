@@ -22,18 +22,26 @@ export type MovieCreator =
 
 export interface Movie {
   _id: string;
+  id?: string;
   title: string;
+  slug?: string;
   synopsis?: string;
+  description?: string;
   genres: string[];
-  language: string[];
+  language: string[] | string;
   cinemas: string[];
   category: MovieCategory;
   releaseDate?: string;
   runtime?: number;
+  durationMinutes?: number;
   rating?: number;
+  status?: string;
+  certification?: string;
   cast: MovieCastMember[];
   poster: string;
+  posterUrl?: string;
   banners: string;
+  backdropUrl?: string;
   createdBy: MovieCreator;
   createdAt?: string;
   updatedAt?: string;
@@ -42,6 +50,7 @@ export interface Movie {
 export interface MoviePayload {
   title: string;
   synopsis?: string;
+  description?: string;
   genres: string[];
   language: string[];
   cinemas: string[];

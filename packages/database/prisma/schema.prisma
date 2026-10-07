@@ -1,30 +1,87 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id                String    @id @default(uuid())
-  email             String    @unique
-  passwordHash      String
-  username          String
-  role              String    @default("user") // "user" | "admin"
-  phone             String?
-  avatar            String?
-  preferredCity     String?
-  preferredLanguage String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
 
-  bookings          Booking[]
-  reviews           Review[]
-  moviesCreated     Movie[]   @relation("UserCreatedMovies")
+enum Role {
+  CUSTOMER
+  THEATER_ADMIN
+  CONTENT_MANAGER
+  FINANCE_ADMIN
+  SUPER_ADMIN
+}
+
+model User {
+  id                      String                   @id @default(uuid())
+  email                   String                   @unique
+  passwordHash            String
+  username                String
+  role                    Role                     @default(CUSTOMER)
+  phone                   String?
+  avatar                  String?
+  preferredCity           String?
+  preferredLanguage       String?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+
+  bookings                Booking[]
+  reviews                 Review[]
+  moviesCreated           Movie[]                  @relation("UserCreatedMovies")
+  sessions                Session[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  assignedTheaters        TheaterAdminAssignment[]
 
   @@map("users")
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id         String    @id @default(uuid())
+  userId     String
+  token      String    @unique
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
 }
 
 model City {
@@ -42,24 +99,38 @@ model City {
 }
 
 model Theater {
-  id          String   @id @default(uuid())
-  name        String
-  slug        String   @unique
-  cityId      String
-  address     String
-  latitude    Float?
-  longitude   Float?
-  description String?
-  amenities   String[] @default([])
-  status      String   @default("ACTIVE")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String                   @id @default(uuid())
+  name             String
+  slug             String                   @unique
+  cityId           String
+  address          String
+  latitude         Float?
+  longitude        Float?
+  description      String?
+  amenities        String[]                 @default([])
+  status           String                   @default("ACTIVE")
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
 
-  city        City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  screens     Screen[]
+  city             City                     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  screens          Screen[]
+  adminAssignments TheaterAdminAssignment[]
 
   @@index([cityId])
   @@map("theaters")
+}
+
+model TheaterAdminAssignment {
+  id        String   @id @default(uuid())
+  userId    String
+  theaterId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theater   Theater  @relation(fields: [theaterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, theaterId])
+  @@map("theater_admin_assignments")
 }
 
 model Screen {
@@ -207,6 +278,7 @@ model Booking {
   bookingSeats   BookingSeat[]
   payment        Payment?
   tickets        Ticket[]
+  refunds        Refund[]
 
   @@index([userId, createdAt])
   @@index([showId, status])
@@ -243,10 +315,31 @@ model Payment {
   updatedAt         DateTime  @updatedAt
 
   booking           Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  refunds           Refund[]
 
   @@index([bookingId])
   @@index([providerPaymentId])
   @@map("payments")
+}
+
+model Refund {
+  id               String    @id @default(uuid())
+  paymentId        String
+  bookingId        String
+  providerRefundId String?   @unique
+  amount           Float
+  currency         String    @default("INR")
+  status           String    @default("PENDING") // PENDING, PROCESSING, SUCCEEDED, FAILED
+  reason           String?
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
+
+  payment          Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  booking          Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([bookingId])
+  @@map("refunds")
 }
 
 model Ticket {

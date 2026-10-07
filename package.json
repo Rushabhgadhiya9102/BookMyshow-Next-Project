@@ -11,7 +11,8 @@
     "dev": "turbo dev",
     "build": "turbo build --concurrency=1",
     "lint": "turbo lint",
-    "check-types": "turbo check-types"
+    "check-types": "turbo check-types",
+    "test": "turbo test --concurrency=1"
   },
   "devDependencies": {
     "turbo": "^2.4.4",

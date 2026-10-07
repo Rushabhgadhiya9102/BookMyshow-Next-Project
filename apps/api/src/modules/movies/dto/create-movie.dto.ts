@@ -9,9 +9,13 @@ export class CreateMovieDto {
   @IsString()
   slug?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  description: string;
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  synopsis?: string;
 
   @IsOptional()
   durationMinutes?: number;
@@ -20,11 +24,16 @@ export class CreateMovieDto {
   duration?: number;
 
   @IsOptional()
+  runtime?: any;
+
+  @IsOptional()
   releaseDate?: string | Date;
 
   @IsOptional()
-  @IsString()
-  language?: string;
+  language?: string | string[];
+
+  @IsOptional()
+  genres?: string | string[];
 
   @IsOptional()
   @IsString()
@@ -36,11 +45,19 @@ export class CreateMovieDto {
 
   @IsOptional()
   @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
   poster?: string;
 
   @IsOptional()
   @IsString()
   posterUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  banners?: string;
 
   @IsOptional()
   @IsString()
@@ -51,7 +68,13 @@ export class CreateMovieDto {
   trailerUrl?: string;
 
   @IsOptional()
-  rating?: number;
+  rating?: any;
+
+  @IsOptional()
+  cast?: any[];
+
+  @IsOptional()
+  cinemas?: any[];
 
   @IsOptional()
   @IsString()

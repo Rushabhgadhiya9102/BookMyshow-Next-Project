@@ -29,8 +29,30 @@ export class PaymentsController {
   }
 
   @Public()
+  @Post("verify")
+  async verifyPayment(
+    @Body()
+    body: {
+      bookingId: string;
+      sessionId?: string;
+    }
+  ) {
+    return this.paymentsService.verifyPayment(body.bookingId, body.sessionId);
+  }
+
+  @Public()
   @Post("webhook")
   async handleWebhook(
+    @Headers("stripe-signature") signature: string,
+    @Req() req: Request & { rawBody?: Buffer }
+  ) {
+    const rawBody = req.rawBody || Buffer.from(JSON.stringify(req.body));
+    return this.paymentsService.handleStripeWebhook(signature, rawBody);
+  }
+
+  @Public()
+  @Post("webhooks/stripe")
+  async handleStripeWebhookAlias(
     @Headers("stripe-signature") signature: string,
     @Req() req: Request & { rawBody?: Buffer }
   ) {

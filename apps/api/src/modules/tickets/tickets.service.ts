@@ -1,151 +1,149 @@
-import { Injectable } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+  Logger,
+} from "@nestjs/common";
 import { PrismaService } from "@/prisma/prisma.service";
+import { MetricsService } from "@/modules/metrics/metrics.service";
 
 @Injectable()
 export class TicketsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(TicketsService.name);
 
-  private mapTicket(ticket: any) {
-    if (!ticket) return null;
-    let qrData: any = {};
-    try {
-      qrData = ticket.qrCodePayload ? JSON.parse(ticket.qrCodePayload) : {};
-    } catch {
-      qrData = {};
+  constructor(
+    private prisma: PrismaService,
+    private metricsService: MetricsService
+  ) {}
+
+  /**
+   * Section 44: QR Verification at theater entrance.
+   * Atomically verifies ticket validity and marks it as USED.
+   * Prevents double entry / replay scans.
+   */
+  async verifyTicket(ticketNumber: string) {
+    if (!ticketNumber || !ticketNumber.trim()) {
+      throw new BadRequestException("ticketNumber is required");
     }
 
-    const booking = ticket.booking;
-    const movieId = qrData.movieId || booking?.show?.movieId || "";
-    const userId = qrData.userId || booking?.userId || "";
-    const seats =
-      qrData.seats ||
-      booking?.bookingSeats?.map((b: any) => b.showSeat?.seat?.seatNumber) ||
-      [];
-    const amount = qrData.amount || booking?.totalAmount || 0;
-    const paymentStatus =
-      qrData.paymentStatus || (ticket.status === "ACTIVE" ? "success" : "pending");
+    const cleanTicketNumber = ticketNumber.trim();
 
-    return {
-      ...ticket,
-      _id: ticket.id,
-      movieId,
-      userId,
-      seats,
-      seatCount: ticket.seatCount || seats.length || 1,
-      amount,
-      paymentStatus,
-      createdAt: ticket.createdAt.toISOString(),
-      updatedAt: ticket.updatedAt.toISOString(),
-    };
-  }
-
-  async findAll() {
-    const tickets = await this.prisma.ticket.findMany({
-      include: {
-        booking: {
-          include: {
-            show: true,
-            bookingSeats: {
-              include: {
-                showSeat: {
-                  include: { seat: true },
+    return this.prisma.$transaction(async (tx) => {
+      const ticket = await tx.ticket.findUnique({
+        where: { ticketNumber: cleanTicketNumber },
+        include: {
+          booking: {
+            include: {
+              show: {
+                include: {
+                  movie: true,
+                  screen: {
+                    include: { theater: true },
+                  },
+                },
+              },
+              bookingSeats: {
+                include: {
+                  showSeat: {
+                    include: { seat: true },
+                  },
                 },
               },
             },
           },
         },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+      });
 
-    return {
-      message: "ticket fetch successfully",
-      tickets: tickets.map((t) => this.mapTicket(t)),
-      status: 200,
-    };
-  }
-
-  async create(data: {
-    movieId: string;
-    userId: string;
-    seats: string[];
-    amount: number;
-    paymentStatus?: string;
-  }) {
-    const ticketNumber = `TKT-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    let show = await this.prisma.show.findFirst({ where: { movieId: data.movieId } });
-    if (!show) {
-      let screen = await this.prisma.screen.findFirst();
-      if (!screen) {
-        let city =
-          (await this.prisma.city.findFirst()) ||
-          (await this.prisma.city.create({
-            data: { name: "Default City", slug: `city-${Date.now().toString(36)}` },
-          }));
-        let theater =
-          (await this.prisma.theater.findFirst()) ||
-          (await this.prisma.theater.create({
-            data: {
-              name: "Main Theater",
-              slug: `theater-${Date.now().toString(36)}`,
-              cityId: city.id,
-              address: "City Center",
-            },
-          }));
-        screen = await this.prisma.screen.create({
-          data: { name: "Auditorium 1", theaterId: theater.id, totalSeats: 100 },
-        });
+      if (!ticket) {
+        throw new NotFoundException(`Ticket '${cleanTicketNumber}' not found`);
       }
-      show = await this.prisma.show.create({
+
+      if (ticket.status === "USED") {
+        this.metricsService.increment("ticket.validation.duplicate");
+        throw new ConflictException(
+          `Ticket '${cleanTicketNumber}' has already been scanned and used at ${ticket.updatedAt.toISOString()}`
+        );
+      }
+
+      if (ticket.status === "CANCELLED") {
+        throw new BadRequestException(
+          `Ticket '${cleanTicketNumber}' is INVALID. This booking was cancelled or refunded.`
+        );
+      }
+
+      if (ticket.status !== "ACTIVE") {
+        throw new BadRequestException(
+          `Ticket '${cleanTicketNumber}' has unrecognised status: ${ticket.status}`
+        );
+      }
+
+      // Mark ticket as USED atomically
+      const updatedTicket = await tx.ticket.update({
+        where: { id: ticket.id },
         data: {
-          movieId: data.movieId,
-          screenId: screen.id,
-          startTime: new Date(),
-          endTime: new Date(Date.now() + 2 * 3600 * 1000),
-          status: "OPEN",
+          status: "USED",
         },
       });
-    }
 
-    const booking = await this.prisma.booking.create({
-      data: {
-        bookingNumber: `BMS-${ticketNumber}`,
-        userId: data.userId,
-        showId: show.id,
-        status: "CONFIRMED",
-        totalAmount: Number(data.amount),
-        subtotal: Number(data.amount),
-        currency: "INR",
-      },
+      this.metricsService.increment("ticket.validation.success");
+
+      const movieTitle = ticket.booking.show.movie.title;
+      const theaterName = ticket.booking.show.screen.theater.name;
+      const screenName = ticket.booking.show.screen.name;
+      const seats = ticket.booking.bookingSeats.map(
+        (bs) => `${bs.showSeat.seat.rowLabel}${bs.showSeat.seat.seatNumber}`
+      );
+
+      this.logger.log(
+        `Ticket ${cleanTicketNumber} successfully scanned and marked USED for movie '${movieTitle}'.`
+      );
+
+      return {
+        valid: true,
+        message: "Ticket verified successfully. Access granted.",
+        ticketNumber: updatedTicket.ticketNumber,
+        status: updatedTicket.status,
+        movieTitle,
+        theaterName,
+        screenName,
+        startTime: ticket.booking.show.startTime,
+        seats,
+        seatCount: ticket.seatCount,
+        verifiedAt: new Date(),
+      };
     });
+  }
 
-    const ticket = await this.prisma.ticket.create({
-      data: {
-        bookingId: booking.id,
-        ticketNumber,
-        qrCodePayload: JSON.stringify({
-          ticketNumber,
-          movieId: data.movieId,
-          userId: data.userId,
-          seats: data.seats,
-          amount: data.amount,
-          paymentStatus: data.paymentStatus || "success",
-        }),
-        seatCount: data.seats.length,
-        status: "ACTIVE",
-      },
+  /**
+   * Retrieves full ticket details by ticketNumber.
+   */
+  async getTicket(ticketNumber: string) {
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { ticketNumber },
       include: {
         booking: {
-          include: { show: true },
+          include: {
+            show: {
+              include: {
+                movie: true,
+                screen: { include: { theater: true } },
+              },
+            },
+            bookingSeats: {
+              include: {
+                showSeat: { include: { seat: true } },
+              },
+            },
+          },
         },
       },
     });
 
-    return {
-      message: "ticket generate successfully",
-      ticket: this.mapTicket(ticket),
-      status: 201,
-    };
+    if (!ticket) {
+      throw new NotFoundException(`Ticket '${ticketNumber}' not found`);
+    }
+
+    return ticket;
   }
 }

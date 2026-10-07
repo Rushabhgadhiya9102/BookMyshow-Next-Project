@@ -7,7 +7,12 @@ interface MovieCardProps {
 }
 
 const MovieCard = ({ movies }: MovieCardProps) => {
-  const { _id, poster, title, genres } = movies || {};
+  const { _id, poster, posterUrl, title, genres } = movies || {};
+  const imageSrc =
+    poster ||
+    posterUrl ||
+    'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=60';
+  const genresText = Array.isArray(genres) ? genres.join(', ') : (genres || 'N/A');
 
   return (
     <>
@@ -18,7 +23,7 @@ const MovieCard = ({ movies }: MovieCardProps) => {
       <Link href={`/client/movies/${_id}`} className="card cursor-pointer">
         <div className="image rounded-lg overflow-hidden">
           <Image
-            src={poster}
+            src={imageSrc}
             width={100}
             height={100}
             alt={title || 'Movie Poster'}
@@ -28,7 +33,7 @@ const MovieCard = ({ movies }: MovieCardProps) => {
         <div className="mt-3 flex justify-between">
           <div className="content text-lg">
             <p className="font-semibold">{title}</p>
-            <p className="capitalize text-red-500 font-medium text-sm">{genres.join(', ')}</p>
+            <p className="capitalize text-red-500 font-medium text-sm">{genresText}</p>
           </div>
         </div>
       </Link>

@@ -33,21 +33,25 @@ const createMovieFormValues = (selectedMovie: Movie | null): MovieFormValues => 
   return {
     _id: selectedMovie._id,
     title: selectedMovie.title,
-    synopsis: selectedMovie.synopsis ?? '',
+    synopsis: selectedMovie.synopsis ?? selectedMovie.description ?? '',
     genres: selectedMovie.genres ?? [],
-    language: selectedMovie.language ?? [],
+    language: Array.isArray(selectedMovie.language)
+      ? selectedMovie.language
+      : selectedMovie.language
+      ? [selectedMovie.language]
+      : [],
     cinemas: selectedMovie.cinemas ?? [],
-    category: selectedMovie.category,
+    category: selectedMovie.category || 'Movie',
     releaseDate: selectedMovie.releaseDate ? selectedMovie.releaseDate.split('T')[0] : '',
-    runtime: selectedMovie.runtime ?? '',
+    runtime: selectedMovie.runtime ?? selectedMovie.durationMinutes ?? '',
     rating: selectedMovie.rating ?? '',
-    cast: selectedMovie.cast.map(member => ({
-      name: member.name,
-      role: member.role,
-      imageUrl: member.imageUrl
+    cast: (selectedMovie.cast || []).map((member: MovieCastMember) => ({
+      name: member?.name || '',
+      role: member?.role || '',
+      imageUrl: member?.imageUrl || ''
     })),
-    poster: selectedMovie.poster ?? '',
-    banners: selectedMovie.banners ?? ''
+    poster: selectedMovie.poster ?? selectedMovie.posterUrl ?? '',
+    banners: selectedMovie.banners ?? selectedMovie.backdropUrl ?? ''
   };
 };
 
@@ -65,8 +69,12 @@ const Addmovies = () => {
   const [posterFile, setPosterFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
 
-  const [posterPreview, setPosterPreview] = useState<string | null>(selectedMovie?.poster ?? null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(selectedMovie?.banners ?? null);
+  const [posterPreview, setPosterPreview] = useState<string | null>(
+    selectedMovie?.poster || selectedMovie?.posterUrl || null
+  );
+  const [bannerPreview, setBannerPreview] = useState<string | null>(
+    selectedMovie?.banners || selectedMovie?.backdropUrl || null
+  );
 
   // ======================================================== //
   // ======================= HANDLE CHANGE ====================== //
@@ -148,7 +156,7 @@ const Addmovies = () => {
       if (bannerFile) bannerUrl = await imageUpload(bannerFile);
 
       const updatedCast = await Promise.all(
-        (movie.cast || []).map(async member => {
+        (movie.cast || []).map(async (member: MovieCastFormMember) => {
           if (member.imageUrl instanceof File) {
             const uploadedUrl = await imageUpload(member.imageUrl);
             return { ...member, imageUrl: uploadedUrl };
@@ -159,6 +167,7 @@ const Addmovies = () => {
 
       const finalData: MoviePayload = {
         ...movie,
+        description: movie.synopsis || '',
         poster: posterUrl,
         banners: bannerUrl,
         cast: updatedCast as MovieCastMember[],
@@ -439,7 +448,7 @@ const Addmovies = () => {
             {/* ======================================================== */}
             <div className="mt-5">
               <p className="font-semibold text-gray-800 mb-2">Cast Members</p>
-              {movie.cast?.map((member, index) => (
+              {movie.cast?.map((member: MovieCastFormMember, index: number) => (
                 <div key={index} className="grid grid-cols-3 gap-2 mb-2">
                   <input
                     type="text"

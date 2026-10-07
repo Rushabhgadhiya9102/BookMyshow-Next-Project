@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post } from "@nestjs/common";
 import { TicketsService } from "./tickets.service";
 import { Public } from "@/common/decorators/public.decorator";
 
@@ -6,24 +6,36 @@ import { Public } from "@/common/decorators/public.decorator";
 export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
+  /**
+   * Section 44: Entrance scanner verification endpoint.
+   * Scans QR payload or ticketNumber and marks ticket USED atomically.
+   */
   @Public()
-  @Get()
-  async findAll() {
-    return this.ticketsService.findAll();
+  @Post("verify")
+  async verifyTicket(
+    @Body()
+    body: {
+      ticketNumber?: string;
+      qrPayload?: string;
+    }
+  ) {
+    let resolvedTicketNumber = body.ticketNumber;
+
+    if (!resolvedTicketNumber && body.qrPayload) {
+      try {
+        const parsed = JSON.parse(body.qrPayload);
+        resolvedTicketNumber = parsed.ticketNumber;
+      } catch {
+        resolvedTicketNumber = body.qrPayload;
+      }
+    }
+
+    return this.ticketsService.verifyTicket(resolvedTicketNumber || "");
   }
 
   @Public()
-  @Post()
-  async create(
-    @Body()
-    body: {
-      movieId: string;
-      userId: string;
-      seats: string[];
-      amount: number;
-      paymentStatus?: string;
-    }
-  ) {
-    return this.ticketsService.create(body);
+  @Get(":ticketNumber")
+  async getTicket(@Param("ticketNumber") ticketNumber: string) {
+    return this.ticketsService.getTicket(ticketNumber);
   }
 }

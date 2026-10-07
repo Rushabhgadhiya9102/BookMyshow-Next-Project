@@ -3,7 +3,6 @@ type EnvKey =
   | 'CLOUDINARY_API_KEY'
   | 'CLOUDINARY_NAME'
   | 'CLOUDINARY_SECRET_KEY'
-  | 'MONGODB_URI'
   | 'SECRET_KEY'
   | 'STRIPE_API_KEY'
   | 'STRIPE_SECRET_KEY';
@@ -30,9 +29,6 @@ const envSetup = {
   },
   get CLOUDINARY_SECRET_KEY(): string {
     return readEnv('CLOUDINARY_SECRET_KEY');
-  },
-  get Mongo_URL(): string {
-    return readEnv('MONGODB_URI');
   },
   get SecretKey(): string {
     return readEnv('SECRET_KEY');

@@ -1,4 +1,5 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator";
+import type { Role } from "@bookmyshow/database";
 
 export class SignupDto {
   @IsNotEmpty()
@@ -16,5 +17,17 @@ export class SignupDto {
 
   @IsOptional()
   @IsString()
-  role?: string;
+  role?: Role | string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  preferredCity?: string;
+
+  @IsOptional()
+  @IsString()
+  preferredLanguage?: string;
 }
